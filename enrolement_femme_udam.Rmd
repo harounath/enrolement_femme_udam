@@ -1,0 +1,223 @@
+---
+title: "Enrolement des femmes enceintes dans les UDAM"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    theme: journal
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = FALSE)
+
+library(readxl)
+library(plyr)
+library(dplyr)
+library(tableone)
+library(kableExtra)
+library(epiDisplay)
+library(Hmisc)
+library(consort)
+library(highcharter)
+library(sf)
+library(ggplot2)
+
+# Chargement de la base de données 
+UDAM <- read_excel("C:/Users/user/Dropbox/Mon PC (DESKTOP-OMJATUN)/Desktop/Cours et Doc personnel/Projet/Pr Adama Faye/Impact Assurance maladie/BAse Koungheul.xlsx")
+
+#Convertir les données en un objet spatial
+##sum(is.na(UDAM$Longitude))
+##sum(is.na(UDAM$Latitude))
+##UDAM1 <- UDAM[!is.na(UDAM$Longitude) & !is.na(UDAM$Latitude), ]
+
+##UDAM_sp <- st_as_sf(UDAM1, coords = c("Longitude", "Latitude"), crs = 4326)
+# Exporter en shapefile
+##st_write(UDAM_sp, "UDAM.shp")
+```
+
+
+# Tableau I: Delai de prise en charge
+```{r include=FALSE}
+# Variable a inclure
+myVars <- c("114_Quel_etait_le_delai_dattente_au_niveau_de_letablissement_sanitaire_avant_votre_prise_en_charge_par_le_professionnel_de_sante_lors_de_vos_CPN","204_Quel_est_le_delais_dattente_au_niveau_de_letablissement_sanitaire_entre_votre_arrivee_et_votre_prise_en_charge_par_le_professionnel_de_sante","318_Quels_sont_les_delais_dattente_au_niveau_de_letablissement_sanitaire_entre_votre_arrivee_et_votre_prise_en_charge","337_Quel_etait_le_delai_dattente_au_niveau_de_letablissement_sanitaire_pour_les_soins_lies_ala_vaccination_de_votre_enfant")
+
+# CreateTableOne:
+out1 <- CreateTableOne(vars = myVars,
+                       data = UDAM,
+                       strata = "6_Statutdelenquete",
+                       test = TRUE,
+                       addOverall = TRUE)
+t1_overall <- print(out1)
+
+t1lab <- c("N",
+           "Quel était le délai d'attente au niveau de l'établissement sanitaire avant votre prise en charge (début des soins) par le professionnel de santé lors de vos CPN? (%)","De 15 à 30 Min","De 31 à 60 Min","Moins de 15 Min","Plus de 1 h",
+           "Quel est le délais d'attente au niveau de l'établissement sanitaire entre votre arrivée et votre prise en charge par le professionnel de santé? (%)","De 15 à 30 Min","De 31 à 60 Min","Moins de 15 Min","Plus de 1 h",
+           "Quels sont les délais d'attente au niveau de
+l'établissement sanitaire entre votre arrivée et votre prise en
+charge? (%)","De 15 à 30 Min","De 31 à 60 Min","Moins de 15 Min","Plus de 1 h",
+           " Quel était le délai d'attente au niveau de l'établissement
+sanitaire pour les soins liés à la vaccination de votre enfant? (%)","De 15 à 30 Min","De 31 à 60 Min","Moins de 15 Min","Plus de 1 h")
+
+# Add row labels
+rownames(t1_overall) <- c(t1lab)
+
+# Tableau
+t1 <- kable(t1_overall, col.names = c("Total", "Affilié à l'UDAM", "Non affiliée à l'UDAM","p-value"," ")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), position = "center",font_size = 14)%>%
+    add_indent(c(3:6, 8:11, 13:16, 18:21))
+```
+`r t1`
+
+# Tableau II: Peception de la qualité des soins fournis par les formations sanitaires et les services fournis par les UDAM
+```{r include=FALSE}
+# Variable a inclure
+myVars2 <- c("116_etes_vous_satisfait_dela_qualite_des_soins_que_vous_avez_recus_lors_de_vos_CPN","207_etes_vous_satisfait_dela_qualite_des_soins_que_vous_avez_recus_lors_de_votre_accouchement","320_etes_vous_satisfait_dela_qualite_des_soins_que_vous_avez_recus_lors_de_vos_CPoN","338_etes_vous_satisfait_dela_qualite_des_soins_lors_de_la_vaccination","270_Que_pensez_vous_de_lecoute_du_personnel_de_lUDAM","271_Comment_jugez_vous_vos_relations_avec_les_UDAM","272_Que_pensez_vous_de_laccueil_offert_par_la_mutuelle_UDAM","273_Que_pensez_vous_de_votre_temps_d_attente_a_lUDAM","274_Que_pensez_vous_de_la_duree_de_realisation_de_votre_carte_de_membre_de_lUDAM","275_Que_pensez_vous_de_lobligation_d_etre_au_moins_5_personnes_pour_adherer_aux_UDAM","276_Que_pensez_vous_du_montant_dela_cotisation_pour_devenir_membre_des_UDAM","277_Que_pensez_vous_de_la_prise_en_charge_des_médicaments_par_lUDAM_dans_les_officines_privees","278_Que_pensez_vous_des_services_dinformation_offerts_par_la_mutuelle_UDAM","279_Comment_evaluez_vous_de_maniere_globale_lUDAM")
+
+# CreateTableOne:
+out2 <- CreateTableOne(vars = myVars2,
+                       data = UDAM,
+                       strata = "6_Statutdelenquete",
+                       test = TRUE,
+                       addOverall = TRUE)
+t2_overall <- print(out2)
+
+t2lab <- c("N",
+           "Êtes-vous satisfait de la qualité des soins que vous avez reçus lors de vos CPN? (%)","Moyennent satisfait","Plutôt satisfait","Très satisfait",
+           "Êtes-vous satisfait de la qualité des soins que vous avez reçus lors de votre accouchement? (%)","Moyennent satisfait","Plutôt satisfait","Très satisfait",
+           "Êtes-vous satisfait de la qualité des soins que vous avez reçus lors de vos CPoN? (%)","Moyennent satisfait","Plutôt satisfait","Très satisfait",
+           "Êtes-vous satisfait de la qualité des soins lors de la vaccination? Trés satisfait (vs plutôt) (%)",
+           "Que pensez-vous de l'écoute du personnel de l'UDAM ? Trés satisfait (vs plutôt) (%)",
+           "Comment jugez-vous vos relations avec les UDAM ? Trés satisfait (vs plutôt) (%)",
+           "Que pensez-vous de l'accueil offert par lamutuelle/UDAM ? Trés satisfait (vs plutôt) (%)",
+           "Que pensez-vous de votre temps d'attente à l'UDAM ? (%)","Moyennent satisfait","Pas satisfait","Plutôt satisfait","Très satisfait",
+           " Que pensez-vous de la durée de réalisation de votre carte de membre de l'UDAM ? (%)", "Moyennent satisfait","Plutôt satisfait","Très satisfait",
+           "Que pensez-vous de l'obligation d'être au moins 5
+personnes pour adhérer aux UDAM ?(%)", "Moyennent satisfait","Plutôt satisfait","Très satisfait",
+           "Que pensez-vous du montant de la cotisation pour devenir membre des UDAM ? (%)","Moyennent satisfait","Pas satisfait","Plutôt satisfait","Très satisfait",
+            "Que pensez-vous de la prise en charge des médicaments par l'UDAM dans les officines privées ? Très satisfait (%) (Vs plutôt)",
+            "Que pensez-vous des services d'information offerts par la mutuelle/UDAM ? Très satisfait (%)",
+            "Comment évaluez-vous de manière globale l'UDAM ? Très satisfait (%)")
+
+# Add row labels
+rownames(t2_overall) <- c(t2lab)
+
+# Tableau
+t2 <- kable(t2_overall, col.names = c("Total", "Affilié à l'UDAM", "Non affiliée à l'UDAM","p-value"," ")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), position = "center",font_size = 14)%>%
+    add_indent(c(3:5, 7:9, 11:13, 19:22,24:26,28:30,32:35))%>%
+  pack_rows("Peception de la qualité des soins fournis par les formations sanitaires",2,14) %>%
+  pack_rows("Peception des services fournis par les UDAM",15,38)
+```
+`r t2`
+
+# Tableau III: Empowerment
+```{r include=FALSE}
+myVars3 <- c("261_Selon_vous_est_ce_que_votre_adhsion_lUDAM_vous_a_aide_a_vous_dcider_a_recourir_aux_services_de_soins","262_Selon_vous_est_ce_que_votre_adhsion_a_lUDAM_vous_a_aide_a_vous_dcider_a_recourir_plus_prcocement_aux_services_de_soins","263_Selon_vous_est_ce_que_votre_adhsion_a_lUDAM_vous_a_t_elle_permis_de_prendre_conscience_de_vos_droits_en_matiere_dacces_aux_soins","264_Selon_vous_auriez_vous_renforce_vos_propres_connaissances_sur_votre_acces_aux_soins_sans_votre_adhsion_a_lUDAM","265_Selon_vous_est_ce_que_ladhsion_a_lUDAM_vous_a_motive_a_utiliser_les_structures_de_soins_en_cas_de_besoin","266_Selon_vous_est_ce_que_ladhsion_a_lUDAM_vous_a_rendu_fier_de_vous_meme_vous_a_valorise_a_montree_que_vous_comptiez_pour_les_autres","267_Selon_vous_auriez_vous_la_meme_perception_de_vous_meme_sans_ladhsion_a_lUDAM","268_Selon_vous_est_ce_que_votre_adhsion_a_lUDAM_vous_a_incite_a_encourager_les_autres_personnes_a_se_rendre_au_structure_de_sante","269_Selon_vous_si_vous_naviez_pas_adhere_a_lUDAM_auriez_vous_encourage_dautres_personnes_a_se_rendre_ala_structures_de_soins_de_sante")
+
+# CreateTableOne:
+out3 <- CreateTableOne(vars = myVars3,
+                       data = UDAM,
+                       strata = "6_Statutdelenquete",
+                       test = FALSE,
+                       addOverall = TRUE)
+t3_overall <- print(out3)
+
+t3lab <- c("N",
+           "Selon vous, est-ce que votre adhésion à l'UDAM vous a aidé à vous décider à recourir aux services de soins (CPN,accouchement, CPoN, vaccination)? (%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, est-ce que votre adhésion à l'UDAM vous a aidé à vous décider à recourir plus précocement aux services de soins (CPN, accouchement, CPoN, vaccination)? (%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, votre adhésion à l'UDAM vous a-t-elle permis de prendre conscience de vos droits en matière d'accès aux soins? (%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, auriez-vous renforcé vos propres connaissances sur votre accès aux soins sans votre adhésion à l'UDAM? (%) ","Beaucoup","Ne sait pas","Pas du tout","Totalement","un peu",
+           "Selon vous, est-ce que l'adhésion à l'UDAM vous a motivé à utiliser les structures de soins en cas de besoin? (%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, est-ce que l'adhésion à l'UDAM vous arendu fier de vous-même ? vous a valorisé ? a montré que vous comptiez pour les autres?(%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, auriez-vous la même perception de vous même sans l'adhésion à l'UDAM? (%)","Beaucoup","Pas du tout","Totalement","un peu",
+           "Selon vous, est-ce que votre adhésion à l'UDAM vous a incité à encourager les autres personnes à se rendre au structure de santé? Totalement (Vs Beaucoup) (%)",
+           "Selon vous, si vous n'aviez pas adhéré à l'UDAM, auriez vous encouragé d'autres personnes à se rendre à la structures de soins de santé? (%)", "Beaucoup","Pas du tout","Totalement")
+
+# Add row labels
+rownames(t3_overall) <- c(t3lab)
+
+# Tableau
+t3 <- kable(t3_overall, col.names = c("Total", "Affilié à l'UDAM", "Non affiliée à l'UDAM")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), position = "center",font_size = 14)%>%
+    add_indent(c(3:6, 8:11, 13:16, 18:22,24:27,29:32,34:37,40:42))
+```
+`r t3`
+
+# Tableau IV: Vaccination des enfants et certificats de naissance
+```{r include=FALSE}
+myVars4 <- c("330_Votre_enfant_a_til_etait_Vaccine","331_Votre_enfant_a_til_recu_le_vaccin_HepB","332_Votre_enfant_a_til_recu_le_vaccin_contre_la_polio","333_Votre_enfant_a_til_recu_le_vaccin_BCG","334_Votre_enfant_a_til_recu_le_vaccin_DPT_HepB_Hib1","335_Votre_enfant_a_til_recu_le_vaccin_contre_la_polio1","336_Votre_enfant_a_til_recu_le_vaccin_Penta1","342_Votre_enfant_a_t_il_elle_un_certificat_acte_de_naissance","Puis_je_voir_le_certificat_acte_de_naissance")
+
+# CreateTableOne:
+out4 <- CreateTableOne(vars = myVars4,
+                       data = UDAM,
+                       strata = "6_Statutdelenquete",
+                       test = TRUE,
+                       addOverall = TRUE)
+t4_overall <- print(out4)
+
+t4lab <- c("N",
+           "Votre enfant a t'il était Vacciné? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin HepB? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin contre la polio à la naissance ? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin BCG? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin DPT HepB-Hib 1? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin contre la polio 1? Oui (%)",
+           "Votre enfant a-t-il reçu le vaccin Penta 1? Oui (%)",
+           "Votre enfant a-t-il/elle un certificat/acte de naissance? Oui (%)",
+           "Puis-je voir le certificat/acte de naissance? Vu (%)")
+
+# Add row labels
+rownames(t4_overall) <- c(t4lab)
+
+# Tableau
+t4 <- kable(t4_overall, col.names = c("Total", "Affilié à l'UDAM", "Non affiliée à l'UDAM","p-value"," ")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), position = "center",font_size = 14)
+```
+`r t4`
+
+
+# Revenus & Dépenses
+## Figures des revenus et dépenses. {.tabset}
+
+### Revenus
+```{r}
+tab <- table(UDAM$Revenu_du_chef_menage,UDAM$'6_Statutdelenquete')
+prop_tab <- prop.table(tab, margin = 1)
+mosaicplot(prop_tab, las = 1, shade = TRUE)
+```
+
+
+### Dépenses
+```{r}
+boxplot(UDAM$Depenses~UDAM$'6_Statutdelenquete',
+        xlab = "Statut",
+        ylab = "Dépenses",
+        col=c("pink","blue"))
+```
+
+
+
+## Tableau V: Comparaison des dépenses efféctuées
+```{r include=FALSE}
+myVars5 <- c("Revenu_du_chef_menage","Depenses")
+# CreateTableOne:
+out5 <- CreateTableOne(vars = myVars5,
+                       data = UDAM,
+                       strata = "6_Statutdelenquete",
+                       test = TRUE,
+                       addOverall = TRUE)
+t5_overall <- print(out5)
+
+t5lab <- c("N",
+           "Revenu du chef de ménage (%)","100 001 à 200 000","50 000 à 100 000", "Inférieur à 50 000","Supérieur à 200 000",
+           "Dépenses éffectuées (mean (SD))")
+# Add row labels
+rownames(t5_overall) <- c(t5lab)
+
+t5 <- kable(t5_overall, col.names = c("Total", "Affilié à l'UDAM", "Non affiliée à l'UDAM","p-value"," ")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed"), position = "center") %>%
+  add_indent(c(3:6))
+```
+`r t5`
